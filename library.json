@@ -5,7 +5,7 @@
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/z3t0/Arduino-IRremote.git"
+    "url": "https://github.com/thedarkhunter/Arduino-IRremote.git"
   },
   "version": "3.3.0",
   "frameworks": "arduino",
