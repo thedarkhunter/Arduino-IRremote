@@ -95,12 +95,18 @@ IRrecv::IRrecv(uint8_t aReceivePin, uint8_t aFeedbackLEDPin):
     // darkhunter: adding instance to global list
     lst_of_irparams.Add(&irparams); // !!!!
 }
-// Neco (2015-03-08): adding destructor to remove instance of irparams from global list
-/*IRrecv::~IRrecv()
+// darkhunter: adding destructor to remove instance of irparams from global list
+IRrecv::~IRrecv()
 {
 	lst_of_irparams.Delete(&irparams);
 }
-*/
+
+// darkhunter: custom interface
+irparams_struct IRrecv::GetIRParams()
+{
+    return irparams;
+}
+
 /**********************************************************************************************************************
  * Stream like API
  **********************************************************************************************************************/
@@ -119,7 +125,6 @@ void IRrecv::begin(uint8_t aReceivePin, bool aEnableLEDFeedback, uint8_t aFeedba
     (void) aEnableLEDFeedback;
     (void) aFeedbackLEDPin;
 #endif
-
     enableIRIn();
 }
 
@@ -127,7 +132,6 @@ void IRrecv::begin(uint8_t aReceivePin, bool aEnableLEDFeedback, uint8_t aFeedba
  * Sets / changes the receiver pin number
  */
 void IRrecv::setReceivePin(uint8_t aReceivePinNumber) {
-    irparams.IRReceivePin = aReceivePinNumber;
     irparams.IRReceivePin = aReceivePinNumber;
 #if defined(__AVR__)
     irparams.IRReceivePinMask = digitalPinToBitMask(aReceivePinNumber);

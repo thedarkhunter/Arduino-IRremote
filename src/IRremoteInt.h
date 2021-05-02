@@ -181,11 +181,15 @@ struct IRData {
 class IRrecv {
 public:
 
-    IRrecv();
+    //IRrecv();
+    ~IRrecv();
     IRrecv(uint8_t aReceivePin);
     IRrecv(uint8_t aReceivePin, uint8_t aFeedbackLEDPin);
     void setReceivePin(uint8_t aReceivePinNumber);
 
+    // darkhunter: custom interface
+    irparams_struct IRrecv::GetIRParams();
+    
     void enableIRIn();
     void disableIRIn();
 
