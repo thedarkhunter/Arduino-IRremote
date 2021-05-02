@@ -37,17 +37,26 @@
 /**
  * The receiver instance
  */
-IRrecv IrReceiver;
+// IRrecv IrReceiver;
+// darkhunter: removed global instance
 
 /*
  * The control structure instance
  */
-struct irparams_struct irparams; // the irparams instance
+// struct irparams_struct irparams; // the irparams instance
+// darkhunter: removed global control structure
+
+// darkhunter: global list to handle multiple receivers
+#include "CppList.h"
+CppList lst_of_irparams;
+// darkhunter: ISR modification at line 1300
+void ProcessOneIRParam(irparams_struct &irparams);
 
 /**
  * Instantiate the IRrecv class. Multiple instantiation is not supported.
  * @param IRReceivePin Arduino pin to use. No sanity check is made.
  */
+/*
 IRrecv::IRrecv() {
     decodedIRData.rawDataPtr = &irparams; // for decodePulseDistanceData() etc.
     setReceivePin(0);
@@ -55,20 +64,27 @@ IRrecv::IRrecv() {
     setLEDFeedback(0, false);
 #endif
 }
+*/
 
-IRrecv::IRrecv(uint8_t aReceivePin) {
+IRrecv::IRrecv(uint8_t aReceivePin):
+    irparams() // darkhunter: initializing irparams
+{
     decodedIRData.rawDataPtr = &irparams; // for decodePulseDistanceData() etc.
     setReceivePin(aReceivePin);
 #if !defined(DISABLE_LED_FEEDBACK_FOR_RECEIVE)
     setLEDFeedback(0, false);
 #endif
+    // darkhunter: adding instance to global list
+    lst_of_irparams.Add(&irparams); // !!!!
 }
 /**
  * Instantiate the IRrecv class. Multiple instantiation is not supported.
  * @param aReceivePin Arduino pin to use, where a demodulating IR receiver is connected.
  * @param aFeedbackLEDPin if 0, then take board specific FEEDBACK_LED_ON() and FEEDBACK_LED_OFF() functions
  */
-IRrecv::IRrecv(uint8_t aReceivePin, uint8_t aFeedbackLEDPin) {
+IRrecv::IRrecv(uint8_t aReceivePin, uint8_t aFeedbackLEDPin):
+    irparams() // darkhunter: initializing irparams
+{
     decodedIRData.rawDataPtr = &irparams; // for decodePulseDistanceData() etc.
     setReceivePin(aReceivePin);
 #if !defined(DISABLE_LED_FEEDBACK_FOR_RECEIVE)
@@ -76,8 +92,15 @@ IRrecv::IRrecv(uint8_t aReceivePin, uint8_t aFeedbackLEDPin) {
 #else
     (void) aFeedbackLEDPin;
 #endif
+    // darkhunter: adding instance to global list
+    lst_of_irparams.Add(&irparams); // !!!!
 }
-
+// Neco (2015-03-08): adding destructor to remove instance of irparams from global list
+/*IRrecv::~IRrecv()
+{
+	lst_of_irparams.Delete(&irparams);
+}
+*/
 /**********************************************************************************************************************
  * Stream like API
  **********************************************************************************************************************/
@@ -104,6 +127,7 @@ void IRrecv::begin(uint8_t aReceivePin, bool aEnableLEDFeedback, uint8_t aFeedba
  * Sets / changes the receiver pin number
  */
 void IRrecv::setReceivePin(uint8_t aReceivePinNumber) {
+    irparams.IRReceivePin = aReceivePinNumber;
     irparams.IRReceivePin = aReceivePinNumber;
 #if defined(__AVR__)
     irparams.IRReceivePinMask = digitalPinToBitMask(aReceivePinNumber);
@@ -1266,7 +1290,18 @@ ISR () // for functions definitions which are called by separate (board specific
 
     TIMER_RESET_INTR_PENDING;// reset TickCounterForISR interrupt flag if required (currently only for Teensy and ATmega4809)
 
-// Read if IR Receiver -> SPACE [xmt LED off] or a MARK [xmt LED on]
+    // darkhunter: iterate over all irparams
+    int count_of_irparams = lst_of_irparams.GetCount();
+    for (int i=0;i<count_of_irparams;++i)
+    {
+        irparams_struct *irparams = (irparams_struct*)lst_of_irparams.GetItem(i);
+	    ProcessOneIRParam(*irparams);
+    }
+}
+
+void ProcessOneIRParam(irparams_struct &irparams)
+{
+    // Read if IR Receiver -> SPACE [xmt LED off] or a MARK [xmt LED on]
 #if defined(__AVR__)
     uint8_t tIRInputLevel = *irparams.IRReceivePinPortInputRegister & irparams.IRReceivePinMask;
 #else

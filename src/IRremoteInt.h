@@ -299,6 +299,8 @@ public:
     uint32_t lastDecodedCommand;
 
     uint8_t repeatCount;        // Used e.g. for Denon decode for autorepeat decoding.
+private:
+    irparams_struct irparams; // darkhunter: added private instance member
 };
 
 extern uint8_t sBiphaseDecodeRawbuffOffset; //
